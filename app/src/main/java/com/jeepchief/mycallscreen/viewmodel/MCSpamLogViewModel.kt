@@ -29,9 +29,7 @@ class MCSpamLogViewModel(private val repo: MCSpamLogRepository): ViewModel() {
     private val _spamLogWithNum = MutableStateFlow(listOf<MCSpamLogEntity>())
     val spamLogWithNum: StateFlow<List<MCSpamLogEntity>> = _spamLogWithNum
     fun getSpamLogWithNum(number: String) = viewModelScope.launch {
-        repo.spamLogWithNum(number).collect { result ->
-            _spamLogWithNum.value = result
-        }
+        _spamLogWithNum.value = repo.spamLogWithNum(number)
     }
 }
 

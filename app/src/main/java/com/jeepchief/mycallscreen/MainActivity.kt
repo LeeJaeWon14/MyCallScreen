@@ -14,6 +14,7 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
@@ -403,7 +404,10 @@ fun SpamListScreen(spamViewModel: MCSpamViewModel) {
     var isSpamListInit by remember { mutableStateOf(false) }
     val spamList by spamViewModel.allSpamInfo.collectAsState().also { isSpamListInit = true }
     var isDeleteSpamDialogShowing by remember { mutableStateOf(false) }
+    var isShowingSpamMenu by remember { mutableStateOf(false) }
     var selectedNumber by remember { mutableStateOf(MCSpamInfoEntity()) }
+
+    val context = LocalContext.current
 
     if(!isSpamListInit) {
         CircularProgress()
@@ -427,7 +431,7 @@ fun SpamListScreen(spamViewModel: MCSpamViewModel) {
                             .fillMaxWidth()
                             .height(80.dp)
                             .clickable {
-                                isDeleteSpamDialogShowing = true
+                                isShowingSpamMenu = true
                                 selectedNumber = spamList[it]
                             },
                         verticalAlignment = Alignment.CenterVertically
@@ -438,9 +442,37 @@ fun SpamListScreen(spamViewModel: MCSpamViewModel) {
                                 ${spamList[it].number}
                                 (${spamList[it].name})
                             """.trimIndent(),
-//                            modifier = Modifier.padding(start = 20.dp)
                         )
                     }
+                }
+            }
+        }
+
+        if(isShowingSpamMenu) {
+            MyDialog(
+                onDismissRequest = { isShowingSpamMenu = false },
+                title = selectedNumber.number,
+                dismissButtonText = "취소",
+                dismissCallback = { isShowingSpamMenu = false }
+            ) {
+                Column {
+                    Text(
+                        modifier = Modifier.clickable {
+                            context.startActivity(
+                                Intent(context, MainActivity::class.java).apply {
+                                    putExtra("isSpamLogShowing", true)
+                                    putExtra("incomingNumber", selectedNumber.number)
+                                }
+                            )
+                        },
+                        text = "기록"
+                    )
+                    Text(
+                        modifier = Modifier.clickable {
+                            isDeleteSpamDialogShowing = true
+                        },
+                        text = "삭제"
+                    )
                 }
             }
         }
@@ -744,9 +776,11 @@ fun MyDialog(
 
 @Composable
 fun SpamLog(number: String, spamLogViewModel: MCSpamLogViewModel, onBack: () -> Unit) {
-    spamLogViewModel.getSpamLogWithNum(number)
-
     val spamLogList by spamLogViewModel.spamLogWithNum.collectAsState()
+
+    LaunchedEffect(Unit) {
+        spamLogViewModel.getSpamLogWithNum(number)
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -930,7 +964,7 @@ fun ExpandedFab(stateViewModel: MCStateViewModel) {
 
 @Composable
 fun CircularProgress() {
-    val activity = (LocalContext.current as MainActivity)
+    val activity = LocalActivity.current ?: return
     CircularProgressIndicator()
     LaunchedEffect(Unit) {
         activity.window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
@@ -957,7 +991,7 @@ fun SetSystemBarColor(
     navigationBarColor: Color = Color.Transparent,
     useDarkIcons: Boolean = false
 ) {
-    val activity = LocalContext.current as Activity
+    val activity = LocalActivity.current ?: return
 
     val window = activity.window
     SideEffect {

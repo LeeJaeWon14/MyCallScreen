@@ -16,7 +16,5 @@ class MCSpamLogRepository(private val mcSpamLogDao: MCSpamLogDao) {
 //        emit(mcSpamLogDao.getSpamLogWithNumber(number))
 //    }.flowOn(Dispatchers.IO)
 
-    suspend fun spamLogWithNum(number: String): Flow<List<MCSpamLogEntity>> = flow {
-        emit(mcSpamLogDao.getSpamLogWithNumber(number))
-    }.flowOn(Dispatchers.IO)
+    suspend fun spamLogWithNum(number: String) = mcSpamLogDao.getSpamLogWithNumber(number)
 }
